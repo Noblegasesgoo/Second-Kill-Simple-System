@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhao.seckill.domain.pojo.SeckillGoods;
 import com.zhao.seckill.vo.SeckillGoodsDetailVo;
 
+import java.util.Map;
+
 /**
  * <p>
  *  服务类
@@ -36,4 +38,10 @@ public interface ISeckillGoodsService extends IService<SeckillGoods> {
      * @return 是否还有库存
      */
     Boolean checkStockAndDecrement(Long goodsId);
+
+    /**
+     * 获得秒杀商品库存的内存标记
+     * @return 秒杀商品库存的内存标记
+     */
+    Map<String, Boolean> getStockLocalOverMap();
 }

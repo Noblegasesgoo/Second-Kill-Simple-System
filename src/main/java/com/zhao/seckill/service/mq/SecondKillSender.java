@@ -26,7 +26,7 @@ public class SecondKillSender {
      * @param goodsId
      */
     public void toDoUpdateStock(Long goodsId) {
-        rabbitTemplate.convertAndSend("seckillExchange", "secondkill.stock", goodsId.toString());
+        rabbitTemplate.convertAndSend("secondkillExchange", "secondkill.stock", goodsId.toString());
     }
 
     /**
@@ -34,7 +34,7 @@ public class SecondKillSender {
      * @param order
      */
     public void toDoUpdateOrder(Order order) {
-        rabbitTemplate.convertAndSend("seckillExchange", "secondkill.order", JSON.toJSONString(order));
+        rabbitTemplate.convertAndSend("secondkillExchange", "secondkill.order", JSON.toJSONString(order));
     }
 
 }

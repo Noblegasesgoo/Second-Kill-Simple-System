@@ -50,11 +50,15 @@ public class SeckillController {
     @PostMapping("/public/update/cache")
     public Response updateCache() {
 
-        IPage<SeckillGoodsDetailVo> list = seckillGoodsService.list(new Page<>(0, -1));
+        IPage<SeckillGoodsDetailVo> list = seckillGoodsService.list(new Page<>(0, 10));
         List<SeckillGoodsDetailVo> records = list.getRecords();
         records.stream().forEach((record) -> {
             /** 设置秒杀商品缓存，一般情况下，缓存存在时间要大于秒杀总时间 **/
-            redisTemplate.opsForValue().set( "SECONDKILL::PRODUCT:" + record.getId() + "-STOCK::COUNT:", record.getStockCount(), 1, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set( "SECONDKILL::PRODUCT:" + record.getId() + "-STOCK::COUNT", record.getStockCount(), 1, TimeUnit.DAYS);
+
+            /** 设置内存标记 **/
+            Map<String, Boolean> stockLocalOverMap = seckillGoodsService.getStockLocalOverMap();
+            stockLocalOverMap.put(record.getId().toString(), record.getStockCount() > 0);
         });
 
         return Response.success().message("秒杀商品库存缓存更新成功");
@@ -66,34 +70,27 @@ public class SeckillController {
     public Response doSecondKill(@ApiParam(value = "商品vo", required = true) @RequestBody SeckillGoodsDetailVo goods) {
 
         /** 得到当前登陆用户的信息 **/
-        //UserVo userVo = UserThreadLocalUtil.get();
         Long userId = UserThreadLocalUtil.get();
 
         /** 优先判断是否重复购买 **/
         Boolean isRepeat = seckillOrderService.checkCurrentUserOrder(userId, goods.getId());
-        //Boolean aBoolean = seckillOrderService.checkCurrentUserOrder(userVo.getId());
         if (isRepeat) {
             return Response.setResponse(StatusCode.REPEAT_ORDER);
         }
 
-        ///** 查询秒杀商品 **/
-        //SeckillGoodsDetailVo seckillGoodDetailVo = seckillGoodsService.ListById(goods.getId());
-        //
-        ///** 检查对应商品库存 **/
-        //if (seckillGoodDetailVo.getStockCount() < 1) {
-        //    return Response.setResponse(StatusCode.EMPTY_STOCK);
-        //}
         /** 检查库存以及预减库存 **/
-        Boolean hasStock =  seckillGoodsService.checkStockAndDecrement(goods.getId());
-        if (!hasStock) {
-
+        Map<String, Boolean> stockLocalOverMap = seckillGoodsService.getStockLocalOverMap();
+        if (!stockLocalOverMap.get(goods.getId().toString())) {
             return Response.error().message("秒杀结束！");
         }
 
+        Boolean hasStock =  seckillGoodsService.checkStockAndDecrement(goods.getId());
+        if (!hasStock) {
+            return Response.error().message("秒杀结束！");
+        }
 
         /** 秒杀成功，下单 **/
         Order order = seckillOrderService.secondKill(userId, goods);
-        //Order order = seckillOrderService.secondKill(userVo.getId(), goods);
 
         Map<String, Object> data = new HashMap<>();
         data.put("goods", goods);
