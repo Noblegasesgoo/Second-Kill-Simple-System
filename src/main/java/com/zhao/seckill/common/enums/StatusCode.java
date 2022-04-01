@@ -9,6 +9,7 @@ package com.zhao.seckill.common.enums;
 public enum StatusCode {
 
     /** 客户端有关 **/
+    STATUS_CODEC1(1, "test"),
     STATUS_CODEC200(200, "请求成功"),
     STATUS_CODEC_MINUS200(-200, "请求失败"),
     STATUS_CODEC400(400, "非法参数"),
